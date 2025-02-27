@@ -6,6 +6,11 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 import joblib
 import os
+import sys
+
+# Add project root to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from prediction.model_tracking import ModelTracker
 
 class CarPricePredictor:
     def __init__(self):
@@ -17,6 +22,7 @@ class CarPricePredictor:
         self.scaler = StandardScaler()
         self.model_path = os.path.join(os.path.dirname(__file__), 'models/rf_model.joblib')
         self.scaler_path = os.path.join(os.path.dirname(__file__), 'models/scaler.joblib')
+        self.tracker = ModelTracker()
 
     def prepare_features(self, df):
         """Prepare features for model training/prediction."""
@@ -58,6 +64,35 @@ class CarPricePredictor:
         print(f"Mean Squared Error: {mse:.2f}")
         print(f"R2 Score: {r2:.2f}")
 
+        # Calculate and log metrics
+        metrics = self.tracker.calculate_metrics(y_test, y_pred)
+        self.tracker.log_metrics(metrics)
+        
+        # Log individual predictions
+        self.tracker.log_predictions(
+            y_test, 
+            y_pred,
+            df.loc[y_test.index, 'Car_Name']
+        )
+
+        # Print performance summary
+        print("\nModel Performance Summary:")
+        summary = self.tracker.get_performance_summary()
+        if summary:
+            print("\nOverall Metrics:")
+            print(f"R2 Score: {summary['overall_metrics']['latest']['metrics']['r2']:.3f}")
+            print(f"RMSE: {summary['overall_metrics']['latest']['metrics']['rmse']:.2f}")
+            print(f"MAPE: {summary['overall_metrics']['latest']['metrics']['mape']:.2%}")
+            
+            print("\nPrediction Analysis:")
+            print(f"Mean Error Percentage: {summary['predictions_summary']['mean_error_percentage']:.2f}%")
+            
+            print("\nTop 5 Underestimated Cars:")
+            for car in summary['top_underestimated']:
+                print(f"{car['car_name']}: Actual={car['actual_price']:.2f}, "
+                      f"Predicted={car['predicted_price']:.2f}, "
+                      f"Error={car['error_percentage']:.2f}%")
+
         # Save model and scaler
         os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
         joblib.dump(self.model, self.model_path)
@@ -87,6 +122,14 @@ class CarPricePredictor:
             uncertainty = np.std(predictions) * (1 - np.mean(feature_importance))
             df['Price_Lower_Bound'] = predictions - 2 * uncertainty
             df['Price_Upper_Bound'] = predictions + 2 * uncertainty
+
+            # Log predictions if actual prices are available
+            if 'Selling_Price' in df.columns:
+                self.tracker.log_predictions(
+                    df['Selling_Price'],
+                    predictions,
+                    df['Car_Name']
+                )
 
             return df
         except Exception as e:
