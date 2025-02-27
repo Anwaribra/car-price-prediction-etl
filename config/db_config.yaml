@@ -1,0 +1,28 @@
+# Database connection settings
+database:
+  host: localhost
+  port: 5432
+  name: car_maintenance_db
+  user: postgres
+  password: 2003
+  # Additional database settings
+  max_connections: 100
+  timeout: 30  # seconds
+  enable_ssl: false
+
+# File paths configuration
+file_paths:
+  input_data: data/car_prediction_data.csv
+  output_data: data/processed_data.csv
+  logs: logs/pipeline.log
+
+# ETL settings
+etl_config:
+  batch_size: 1000
+  max_retries: 3
+  log_level: INFO
+  # Data validation thresholds
+  min_year: 2000
+  max_year: 2024
+  min_price: 0
+  max_price: 100000000 
