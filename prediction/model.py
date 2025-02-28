@@ -8,7 +8,7 @@ import joblib
 import os
 import sys
 
-# Add project root to path
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from prediction.model_tracking import ModelTracker
 
@@ -26,7 +26,7 @@ class CarPricePredictor:
 
     def prepare_features(self, df):
         """Prepare features for model training/prediction."""
-        # Select relevant features
+        
         features = [
             'Year', 'Kms_Driven', 'Present_Price', 
             'Fuel_Type', 'Seller_Type', 'Transmission', 
@@ -37,11 +37,11 @@ class CarPricePredictor:
 
     def train(self, df):
         """Train the model with provided data."""
-        # Prepare features and target
+        
         X = self.prepare_features(df)
         y = df['Selling_Price']
 
-        # Split data
+        
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
